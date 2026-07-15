@@ -6,19 +6,20 @@
     r: "https://raw.githubusercontent.com/dbofchl/bypass/main/bypass.txt",
     t: "https://raw.githubusercontent.com/dbofchl/bypass/main/ch.txt",
     m: "https://raw.githubusercontent.com/vanz-website/VanzBypass/main/music.mp3",
-    s: "position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);" +
-       "background:rgba(6,10,23,0.95);backdrop-filter:blur(12px);" +
-       "-webkit-backdrop-filter:blur(12px);color:#fff;padding:30px 25px;" +
+    s: "position:fixed;top:30%;left:50%;transform:translate(-50%,-30%);" +
+       "background:rgba(6,10,23,0.85);backdrop-filter:blur(15px);" +
+       "-webkit-backdrop-filter:blur(15px);color:#fff;padding:30px 25px;" +
        "border-radius:16px;z-index:2147483647;" +
        'font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;' +
        "text-align:center;box-shadow:0 20px 50px rgba(0,0,0,0.6);" +
        "border:2px solid #00ffcc;width:300px;box-sizing:border-box;" +
+       "cursor:move;user-select:none;touch-action:none;" + // Hỗ trợ kéo thả
        "animation: vanz-lightning-glow 3s linear infinite;",
   };
 
   // ─── Key Thủ Công (Bypass License) ──────────────────────────────────────────
   const VALID_KEYS = [
-    "@MoewLover", 
+    "keyvip", 
   ];
 
   const FALLBACK_MUSIC_URL = "https://raw.githubusercontent.com/vanz-website/VanzBypass/main/music.mp3";
@@ -89,8 +90,8 @@
         border-radius: 8px;
         font-weight: 700;
         cursor: pointer;
-        font-size: 14px;
-        letter-spacing: 1.5px;
+        font-size: 13px;
+        letter-spacing: 1px;
         margin-bottom: 12px;
         color: #fff;
         transition: all 0.3s ease;
@@ -119,6 +120,11 @@
     authBox.id            = "vanz-auth-box";
     authBox.style.cssText = CONFIG.s;
     authBox.innerHTML     = `
+      <!-- Thanh Tiêu Đề để hỗ trợ kéo trên PC/Điện thoại dễ dàng hơn -->
+      <div id="vanz-drag-handle" style="width:100%;height:15px;cursor:move;margin-bottom:5px;display:flex;justify-content:center;align-items:center;">
+         <span style="width:40px;height:4px;background:rgba(255,255,255,0.2);border-radius:2px;"></span>
+      </div>
+
       <button id="vanz-music-btn" style="
         position:absolute;top:15px;right:15px;
         background:rgba(255,255,255,0.05);border:1px solid rgba(0,255,204,0.3);
@@ -165,6 +171,56 @@
       </div>
     `;
     document.body.appendChild(authBox);
+
+    // ── Xử Lý Kéo Thả (Drag & Drop) Cho Cả PC & Di Động ──────────────────────
+    let isDragging = false;
+    let startX, startY, initialLeft, initialTop;
+
+    const dragStart = (e) => {
+      // Chỉ kéo khi nhấn trúng authBox hoặc thanh tay cầm kéo vanz-drag-handle
+      if (e.target.closest('#vanz-music-btn') || e.target.closest('#vanz-key-input') || e.target.closest('button') || e.target.closest('input')) {
+        return; 
+      }
+      isDragging = true;
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+      const rect = authBox.getBoundingClientRect();
+      // Chuyển translate(-50%, -30%) sang vị trí cố định thực tế để không bị nhảy khung khi kéo
+      authBox.style.transform = 'none';
+      authBox.style.left = rect.left + 'px';
+      authBox.style.top = rect.top + 'px';
+
+      startX = clientX;
+      startY = clientY;
+      initialLeft = rect.left;
+      initialTop = rect.top;
+    };
+
+    const dragMove = (e) => {
+      if (!isDragging) return;
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+      const dx = clientX - startX;
+      const dy = clientY - startY;
+
+      authBox.style.left = (initialLeft + dx) + 'px';
+      authBox.style.top = (initialTop + dy) + 'px';
+    };
+
+    const dragEnd = () => {
+      isDragging = false;
+    };
+
+    authBox.addEventListener('mousedown', dragStart);
+    document.addEventListener('mousemove', dragMove);
+    document.addEventListener('mouseup', dragEnd);
+
+    authBox.addEventListener('touchstart', dragStart, { passive: true });
+    document.addEventListener('touchmove', dragMove, { passive: false });
+    document.addEventListener('touchend', dragEnd);
+
 
     // ── Khai báo biến DOM ──────────────────────────────────────────────────────
     const musicBtn    = document.getElementById("vanz-music-btn");
@@ -245,6 +301,9 @@
 
     // ── Tối ưu hóa tốc độ chuyển hướng & Vòng tròn đếm ngược ─────────────────
     function runRedirect(countdownSeconds) {
+      // Hủy liên kết sự kiện kéo để tránh lỗi giao diện countdown
+      document.removeEventListener('mousemove', dragMove);
+      document.removeEventListener('touchmove', dragMove);
       authBox.remove();
 
       const loadingOverlay = document.createElement("div");
@@ -273,7 +332,7 @@
       `;
       document.body.appendChild(loadingOverlay);
 
-      // TỐI ƯU: Rút ngắn thời gian giả lập kiểm tra cập nhật xuống 1.2s (cũ là 5s)
+      // Thời gian chờ kiểm tra cập nhật (giữ ổn định 1.2s)
       setTimeout(async () => {
         let hasUpdate = false;
         try {
@@ -371,55 +430,4 @@
                 countdownOverlay.remove();
                 window.location.replace(redirectUrl);
               }
-            }, 1000);
-
-          } catch {
-            alert("LỖI CHUYỂN HƯỚNG!");
-          }
-        }, 1000); // Rút ngắn độ trễ thông báo xuống 1s
-      }, 1200);
-    }
-
-    // ── Xử lý khi bấm nút xác thực (Xác thực key) ─────────────────────────────
-    loginBtn.addEventListener("click", () => {
-      const inputKey = keyInput.value.trim();
-
-      if (!inputKey) {
-        statusEl.innerHTML = "<span style='color:#ff4444;'>VUI LÒNG NHẬP KEY!</span>";
-        return;
-      }
-
-      const isValid = VALID_KEYS.some(k => k.toLowerCase() === inputKey.toLowerCase());
-
-      if (isValid) {
-        statusEl.innerHTML        = "<span style='color:#00ffcc;'>MÃ KEY CHÍNH XÁC! ✓</span>";
-        loginBtn.disabled         = true;
-        telegramBtn.disabled      = true;
-
-        setTimeout(() => {
-          authBox.innerHTML = `
-            <h3 style="margin:0 0 8px 0;color:#00ffcc;font-size:18px;letter-spacing:1px;
-                       font-weight:800;text-shadow:0 0 12px rgba(0,255,204,0.5);">
-             MOEW LOVER BYPASS
-            </h3>
-            <p style="margin:0 0 22px 0;color:#64748b;font-size:10px;letter-spacing:1.5px;font-weight:600;">
-              CHỌN CHẾ ĐỘ VƯỢT AN TOÀN
-            </p>
-
-            <button id="vanz-btn-fast"   class="vanz-mode-btn vanz-btn-fast">⚡ CHẾ ĐỘ NHANH (3 GIÂY)</button>
-            <button id="vanz-btn-secure" class="vanz-mode-btn vanz-btn-secure">🛡️ CHẾ ĐỘ BẢO MẬT (5 GIÂY)</button>
-            <button id="vanz-btn-safe"   class="vanz-mode-btn vanz-btn-safe">🔰 CHẾ ĐỘ AN TOÀN (8 GIÂY)</button>
-          `;
-          // TỐI ƯU: Thay đổi thời gian đếm ngược vượt link sang cực nhanh (3s, 5s, 8s)
-          document.getElementById("vanz-btn-fast").addEventListener("click",   () => runRedirect(3));
-          document.getElementById("vanz-btn-secure").addEventListener("click", () => runRedirect(5));
-          document.getElementById("vanz-btn-safe").addEventListener("click",   () => runRedirect(8));
-        }, 800);
-
-      } else {
-        statusEl.innerHTML = "<span style='color:#ff4444;'>KEY KHÔNG CHÍNH XÁC HOẶC HẾT HẠN!</span>";
-      }
-    });
-
-  })();
-})();
+       
