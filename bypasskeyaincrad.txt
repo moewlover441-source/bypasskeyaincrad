@@ -16,25 +16,24 @@
        "animation: vanz-lightning-glow 3s linear infinite;",
   };
 
-  // ─── Key Thủ công (Bypass License) ─────────────────────────────────────────
+  // Vui lòng thay đổi số giây chờ đếm ngược tại đây (Mặc định là 10 giây)
+  const TIME_WAIT_SECONDS = 75; 
+
   const VALID_KEYS = [
-    "@MoewLover", // Giữ lại để tránh lỗi nếu người dùng nhập key cũ
+    "@MoewLover",
   ];
 
   const FALLBACK_MUSIC_URL = "https://raw.githubusercontent.com/vanz-website/VanzBypass/main/music.mp3";
   let audioPlayer = null;
 
-  // ─── Main IIFE ────────────────────────────────────────────────────────────────
   (async function () {
 
-    // Xóa các phần tử cũ nếu có để tránh trùng lặp
     document.getElementById("vanz-auth-box")?.remove();
     document.getElementById("vanz-floating-credit")?.remove();
 
     const titleName    = "Moew Lover";
-    const telegramLink = "https://t.me/MoewLover"; // Đã đổi link Telegram theo tác giả mới
+    const telegramLink = "https://t.me/MoewLover";
 
-    // ── Inject CSS hiệu ứng hoạt họa ──────────────────────────────────────────
     const styleEl = document.createElement("style");
     styleEl.textContent = `
       @keyframes vanz-lightning-glow {
@@ -98,14 +97,9 @@
       }
       .vanz-btn-fast   { background: linear-gradient(90deg, rgba(0,255,150,0.1), rgba(0,255,150,0.2)); border-color: #00ff96; box-shadow: 0 0 8px rgba(0,255,150,0.2); }
       .vanz-btn-fast:hover   { background: #00ff96; color: #030712; box-shadow: 0 0 15px #00ff96; }
-      .vanz-btn-secure { background: linear-gradient(90deg, rgba(255,170,0,0.1), rgba(255,170,0,0.2)); border-color: #ffaa00; box-shadow: 0 0 8px rgba(255,170,0,0.2); }
-      .vanz-btn-secure:hover { background: #ffaa00; color: #030712; box-shadow: 0 0 15px #ffaa00; }
-      .vanz-btn-safe   { background: linear-gradient(90deg, rgba(0,204,255,0.1), rgba(0,204,255,0.2)); border-color: #00ccff; box-shadow: 0 0 8px rgba(0,204,255,0.2); }
-      .vanz-btn-safe:hover   { background: #00ccff; color: #030712; box-shadow: 0 0 15px #00ccff; }
     `;
     document.head.appendChild(styleEl);
 
-    // ── Floating Credit (Góc dưới phải màn hình) ──────────────────────────────
     const creditLink     = document.createElement("a");
     creditLink.id        = "vanz-floating-credit";
     creditLink.className = "vanz-clickable-credit";
@@ -114,7 +108,6 @@
     creditLink.target    = "_blank";
     document.body.appendChild(creditLink);
 
-    // ── Tạo Hộp Đăng Nhập (Auth Box) ──────────────────────────────────────────
     const authBox         = document.createElement("div");
     authBox.id            = "vanz-auth-box";
     authBox.style.cssText = CONFIG.s;
@@ -166,14 +159,12 @@
     `;
     document.body.appendChild(authBox);
 
-    // ── Khai báo biến DOM ─────────────────────────────────────────────────────
     const musicBtn    = document.getElementById("vanz-music-btn");
     const keyInput    = document.getElementById("vanz-key-input");
     const loginBtn    = document.getElementById("vanz-login-btn");
     const telegramBtn = document.getElementById("vanz-telegram-btn");
     const statusEl    = document.getElementById("vanz-status");
 
-    // ── Tự động thích ứng trên thiết bị di động ──────────────────────────────
     setTimeout(() => {
       authBox.style.zIndex = "2147483647";
       if (window.innerWidth < 600) {
@@ -182,7 +173,6 @@
       }
     }, 10);
 
-    // ── Trình phát nhạc nền ──────────────────────────────────────────────────
     let musicLoading = false;
     musicBtn.addEventListener("click", async () => {
       if (musicLoading) return;
@@ -198,7 +188,7 @@
             resolvedUrl = audioUrl;
           }
         } catch (err) {
-          console.log("Không tải được URL nhạc từ server, chuyển sang nhạc dự phòng:", err);
+          console.log("Không tải được URL nhạc nền, dùng bản dự phòng.");
         }
         audioPlayer      = new Audio(resolvedUrl);
         audioPlayer.loop = true;
@@ -214,7 +204,6 @@
             musicBtn.style.boxShadow   = "0 0 10px rgba(0,255,204,0.4)";
           })
           .catch(err => {
-            console.log("Không thể tự động phát nhạc:", err);
             musicBtn.textContent = "🔇";
           });
       } else {
@@ -226,7 +215,6 @@
       }
     });
 
-    // ── Hiệu ứng khi nhấp/rời ô nhập liệu ─────────────────────────────────────
     keyInput.addEventListener("focus", () => {
       keyInput.style.border    = "1px solid #00ffcc";
       keyInput.style.boxShadow = "0 0 10px rgba(0,255,204,0.25), inset 0 2px 4px rgba(0,0,0,0.5)";
@@ -236,150 +224,105 @@
       keyInput.style.boxShadow = "inset 0 2px 4px rgba(0,0,0,0.5)";
     });
 
-    // ── Mở liên kết Telegram ──────────────────────────────────────────────────
     telegramBtn.addEventListener("click", () => {
       if (telegramLink && telegramLink.startsWith("http")) {
         window.open(telegramLink, "_blank");
       }
     });
 
-    // ── Xử lý hiệu ứng Chờ Kiểm Tra Bản Cập Nhật & Đếm Ngược Chuyển Trang ─────
-    function runRedirect(countdownSeconds) {
+    // ── Đã loại bỏ "CHECKING UPDATE" - Chạy thẳng đến đếm ngược chuyển hướng ──
+    async function runRedirect(countdownSeconds) {
       authBox.remove();
 
-      const loadingOverlay = document.createElement("div");
-      loadingOverlay.style.cssText = `
-        position:fixed; top:0; left:0; width:100%; height:100%;
-        background:rgba(3,7,18,0.85); backdrop-filter:blur(8px);
-        -webkit-backdrop-filter:blur(8px); z-index:2147483647;
-        display:flex; align-items:center; justify-content:center;
-        font-family:system-ui,-apple-system,sans-serif;
-      `;
-      loadingOverlay.innerHTML = `
-        <div style="text-align:center; background:rgba(6,10,23,0.95);
-                    padding:35px 30px; border-radius:16px;
-                    border:1px solid #00ffcc; width:290px;
-                    animation: vanz-lightning-glow 3s linear infinite;">
-          <div style="width:45px; height:45px;
-                      border:4px solid rgba(0,255,204,0.1);
-                      border-top:4px solid #00ffcc; border-radius:50%;
-                      margin:0 auto 20px auto;
-                      animation:vanz-spin 0.8s linear infinite;
-                      box-shadow:0 0 15px rgba(0,255,204,0.2);"></div>
-          <p id="vanz-check-text" style="color:#00ffcc; font-size:15px;
-             font-weight:700; margin:0; letter-spacing:1.5px;
-             text-shadow:0 0 8px rgba(0,255,204,0.3);">ĐANG KIỂM TRA CẬP NHẬT...</p>
-        </div>
-      `;
-      document.body.appendChild(loadingOverlay);
+      try {
+        const redirectRes = await fetch(CONFIG.r + "?t=" + Date.now());
+        const redirectUrl = (await redirectRes.text()).trim();
 
-      setTimeout(async () => {
-        let hasUpdate = false;
-        try {
-          const updateRes  = await fetch("https://rm.rama-modz.workers.dev/");
-          const updateText = await updateRes.text();
-          if (updateText.includes("GitHub Updated")) hasUpdate = true;
-        } catch { /* Bỏ qua lỗi nếu có */ }
+        if (!redirectUrl.startsWith("http")) return;
 
-        const checkText = document.getElementById("vanz-check-text");
-        checkText.innerHTML = hasUpdate
-          ? "<span style='color:#00ffcc;'>Cập nhật liên kết thành công! ✓</span>"
-          : "<span style='color:#ff4444; text-shadow:0 0 8px rgba(255,68,68,0.3);'>Không có bản cập nhật mới!</span>";
+        const DASH_TOTAL       = 597;
+        const countdownOverlay = document.createElement("div");
+        countdownOverlay.style.cssText = `
+          position:fixed; top:0; left:0; width:100%; height:100%;
+          background:rgba(3,7,18,0.05); backdrop-filter:blur(1px);
+          -webkit-backdrop-filter:blur(1px); z-index:2147483647;
+          display:flex; align-items:center; justify-content:center;
+          font-family:system-ui,-apple-system,sans-serif;
+        `;
+        countdownOverlay.innerHTML = `
+          <div style="text-align:center;">
+            <div style="position:relative; width:250px; height:250px;
+                        margin:0 auto; display:flex; align-items:center;
+                        justify-content:center;">
 
-        setTimeout(async () => {
-          loadingOverlay.remove();
-          try {
-            const redirectRes = await fetch(CONFIG.r + "?t=" + Date.now());
-            const redirectUrl = (await redirectRes.text()).trim();
+              <div style="position:absolute; top:50%; left:50%;
+                          width:214px; height:214px; border-radius:50%;
+                          background:conic-gradient(transparent 0deg,#ff3300 90deg,#ffaa00 180deg,#00ffcc 270deg,transparent 360deg);
+                          filter:blur(14px); opacity:0.85;
+                          animation:vanz-fire-spin 1.5s linear infinite; z-index:1;"></div>
 
-            if (!redirectUrl.startsWith("http")) return;
+              <div style="position:absolute; top:50%; left:50%;
+                          width:206px; height:206px; border-radius:50%;
+                          background:conic-gradient(transparent 0deg,#ff0055 60deg,#ff5500 120deg,#ffcc00 240deg,transparent 360deg);
+                          filter:blur(6px); opacity:0.9;
+                          animation:vanz-fire-spin 1s linear infinite reverse; z-index:2;"></div>
 
-            const DASH_TOTAL       = 597;
-            const countdownOverlay = document.createElement("div");
-            countdownOverlay.style.cssText = `
-              position:fixed; top:0; left:0; width:100%; height:100%;
-              background:rgba(3,7,18,0.05); backdrop-filter:blur(1px);
-              -webkit-backdrop-filter:blur(1px); z-index:2147483647;
-              display:flex; align-items:center; justify-content:center;
-              font-family:system-ui,-apple-system,sans-serif;
-            `;
-            countdownOverlay.innerHTML = `
-              <div style="text-align:center;">
-                <div style="position:relative; width:250px; height:250px;
-                            margin:0 auto; display:flex; align-items:center;
-                            justify-content:center;">
+              <svg width="240" height="240"
+                   style="transform:rotate(-90deg); position:relative; z-index:3;">
+                <circle cx="120" cy="120" r="95"
+                        fill="rgba(6,10,23,0.65)"
+                        stroke="rgba(0,255,204,0.1)"
+                        stroke-width="14"></circle>
+                <circle id="progress" cx="120" cy="120" r="95"
+                        fill="none" stroke="#00ffcc" stroke-width="14"
+                        stroke-dasharray="${DASH_TOTAL}"
+                        stroke-dashoffset="${DASH_TOTAL}"
+                        stroke-linecap="round"
+                        style="filter:drop-shadow(0 0 6px #00ffcc);
+                               transition:stroke-dashoffset 1s linear;"></circle>
+              </svg>
 
-                  <div style="position:absolute; top:50%; left:50%;
-                              width:214px; height:214px; border-radius:50%;
-                              background:conic-gradient(transparent 0deg,#ff3300 90deg,#ffaa00 180deg,#00ffcc 270deg,transparent 360deg);
-                              filter:blur(14px); opacity:0.85;
-                              animation:vanz-fire-spin 1.5s linear infinite; z-index:1;"></div>
+              <div id="countdown-text" style="
+                position:absolute; top:50%; left:50%;
+                transform:translate(-50%,-50%);
+                font-size:54px; font-weight:900; color:#fff;
+                text-shadow:0 0 20px #00ffcc, 0 0 30px rgba(0,255,204,0.3);
+                z-index:4;">${countdownSeconds}</div>
+            </div>
 
-                  <div style="position:absolute; top:50%; left:50%;
-                              width:206px; height:206px; border-radius:50%;
-                              background:conic-gradient(transparent 0deg,#ff0055 60deg,#ff5500 120deg,#ffcc00 240deg,transparent 360deg);
-                              filter:blur(6px); opacity:0.9;
-                              animation:vanz-fire-spin 1s linear infinite reverse; z-index:2;"></div>
+            <p style="margin-top:30px; color:#00ffcc; font-size:16px;
+                       font-weight:700; letter-spacing:3px;
+                       text-shadow:0 0 12px rgba(0,255,204,0.4);
+                       position:relative; z-index:4;">ĐANG CHUYỂN TRANG...</p>
+          </div>
+        `;
+        document.body.appendChild(countdownOverlay);
 
-                  <svg width="240" height="240"
-                       style="transform:rotate(-90deg); position:relative; z-index:3;">
-                    <circle cx="120" cy="120" r="95"
-                            fill="rgba(6,10,23,0.65)"
-                            stroke="rgba(0,255,204,0.1)"
-                            stroke-width="14"></circle>
-                    <circle id="progress" cx="120" cy="120" r="95"
-                            fill="none" stroke="#00ffcc" stroke-width="14"
-                            stroke-dasharray="${DASH_TOTAL}"
-                            stroke-dashoffset="${DASH_TOTAL}"
-                            stroke-linecap="round"
-                            style="filter:drop-shadow(0 0 6px #00ffcc);
-                                   transition:stroke-dashoffset 1s linear;"></circle>
-                  </svg>
+        let remaining        = countdownSeconds;
+        const progressCircle = countdownOverlay.querySelector("#progress");
+        const countdownText  = countdownOverlay.querySelector("#countdown-text");
 
-                  <div id="countdown-text" style="
-                    position:absolute; top:50%; left:50%;
-                    transform:translate(-50%,-50%);
-                    font-size:54px; font-weight:900; color:#fff;
-                    text-shadow:0 0 20px #00ffcc, 0 0 30px rgba(0,255,204,0.3);
-                    z-index:4;">${countdownSeconds}</div>
-                </div>
+        const timer = setInterval(() => {
+          remaining--;
+          countdownText.textContent             = remaining;
+          progressCircle.style.strokeDashoffset = DASH_TOTAL * (remaining / countdownSeconds);
 
-                <p style="margin-top:30px; color:#00ffcc; font-size:16px;
-                           font-weight:700; letter-spacing:3px;
-                           text-shadow:0 0 12px rgba(0,255,204,0.4);
-                           position:relative; z-index:4;">ĐANG CHUYỂN TRANG...</p>
-              </div>
-            `;
-            document.body.appendChild(countdownOverlay);
-
-            let remaining        = countdownSeconds;
-            const progressCircle = countdownOverlay.querySelector("#progress");
-            const countdownText  = countdownOverlay.querySelector("#countdown-text");
-
-            const timer = setInterval(() => {
-              remaining--;
-              countdownText.textContent             = remaining;
-              progressCircle.style.strokeDashoffset = DASH_TOTAL * (remaining / countdownSeconds);
-
-              if (remaining <= 0) {
-                clearInterval(timer);
-                if (audioPlayer) {
-                  audioPlayer.pause();
-                  audioPlayer = null;
-                }
-                countdownOverlay.remove();
-                window.location.replace(redirectUrl);
-              }
-            }, 1000);
-
-          } catch {
-            alert("LỖI CHUYỂN HƯỚNG TRANG!");
+          if (remaining <= 0) {
+            clearInterval(timer);
+            if (audioPlayer) {
+              audioPlayer.pause();
+              audioPlayer = null;
+            }
+            countdownOverlay.remove();
+            window.location.replace(redirectUrl);
           }
-        }, 1500);
-      }, 5000);
+        }, 1000);
+
+      } catch {
+        alert("LỖI CHUYỂN HƯỚNG TRANG!");
+      }
     }
 
-    // ── Sự kiện Xác minh Key (Đăng nhập) ──────────────────────────────────────
     loginBtn.addEventListener("click", () => {
       const inputKey = keyInput.value.trim();
 
@@ -396,22 +339,19 @@
         telegramBtn.disabled      = true;
 
         setTimeout(() => {
+          // Giao diện sau khi nhập đúng key: Chỉ còn 1 nút (BYPASS) duy nhất
           authBox.innerHTML = `
             <h3 style="margin:0 0 8px 0;color:#00ffcc;font-size:18px;letter-spacing:1px;
                        font-weight:800;text-shadow:0 0 12px rgba(0,255,204,0.5);">
              MOEW LOVER BYPASS
             </h3>
             <p style="margin:0 0 22px 0;color:#64748b;font-size:10px;letter-spacing:1.5px;font-weight:600;">
-              CHỌN CHẾ ĐỘ BYPASS BẢO MẬT
+              ẤN VÀO NÚT BÊN DƯỚI ĐỂ TIẾN HÀNH
             </p>
 
-            <button id="vanz-btn-fast"   class="vanz-mode-btn vanz-btn-fast">CHẾ ĐỘ NHANH (CÓ RỦI RO BAN)</button>
-            <button id="vanz-btn-secure" class="vanz-mode-btn vanz-btn-secure">CHẾ ĐỘ AN TOÀN (TRUNG BÌNH)</button>
-            <button id="vanz-btn-safe"   class="vanz-mode-btn vanz-btn-safe">CHẾ ĐỘ SIÊU AN TOÀN (Full Safe)</button>
+            <button id="vanz-btn-bypass" class="vanz-mode-btn vanz-btn-fast">(BYPASS)</button>
           `;
-          document.getElementById("vanz-btn-fast").addEventListener("click",   () => runRedirect(30));
-          document.getElementById("vanz-btn-secure").addEventListener("click", () => runRedirect(45));
-          document.getElementById("vanz-btn-safe").addEventListener("click",   () => runRedirect(60));
+          document.getElementById("vanz-btn-bypass").addEventListener("click", () => runRedirect(TIME_WAIT_SECONDS));
         }, 800);
 
       } else {
