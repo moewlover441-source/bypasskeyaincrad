@@ -1,6 +1,7 @@
 (function () {
   "use strict";
 
+  // Cấu hình các đường dẫn tài nguyên
   const CONFIG = {
     r: "https://raw.githubusercontent.com/dbofchl/bypass/main/bypass.txt",
     t: "https://raw.githubusercontent.com/dbofchl/bypass/main/ch.txt",
@@ -12,12 +13,16 @@
   const FALLBACK_MUSIC_URL = "https://raw.githubusercontent.com/vanz-website/VanzBypass/main/music.mp3";
   let audioPlayer = null;
 
-  document.getElementById("vanz-auth-box")?.remove();
-  document.getElementById("vanz-floating-credit")?.remove();
+  // Dọn dẹp giao diện cũ nếu có trước khi khởi tạo
+  const oldAuth = document.getElementById("vanz-auth-box");
+  if (oldAuth) oldAuth.remove();
+  const oldCredit = document.getElementById("vanz-floating-credit");
+  if (oldCredit) oldCredit.remove();
 
   const titleName = "Moew Lover";
   const telegramLink = "https://t.me/MoewLover"; 
 
+  // Thêm style CSS động vào trang
   const styleEl = document.createElement("style");
   styleEl.textContent = `
     @keyframes vanz-lightning-glow {
@@ -51,6 +56,7 @@
   `;
   document.head.appendChild(styleEl);
 
+  // Tạo nhãn bản quyền bay lơ lửng góc dưới
   const creditLink = document.createElement("a");
   creditLink.id = "vanz-floating-credit";
   creditLink.className = "vanz-clickable-credit";
@@ -59,6 +65,7 @@
   creditLink.target = "_blank";
   document.body.appendChild(creditLink);
 
+  // Tạo khung nhập Key
   const authBox = document.createElement("div");
   authBox.id = "vanz-auth-box";
   authBox.style.cssText = CONFIG.s;
@@ -76,8 +83,9 @@
   `;
   document.body.appendChild(authBox);
 
-  // Xử lý di chuyển kéo thả
+  // Xử lý logic kéo thả Box
   let isDragging = false, startX, startY, initialLeft, initialTop;
+  
   const dragStart = (e) => {
     if (e.target.closest('#vanz-music-btn') || e.target.closest('#vanz-key-input') || e.target.closest('button') || e.target.closest('input')) return;
     isDragging = true;
@@ -90,6 +98,7 @@
     startX = clientX; startY = clientY;
     initialLeft = rect.left; initialTop = rect.top;
   };
+
   const dragMove = (e) => {
     if (!isDragging) return;
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -97,6 +106,7 @@
     authBox.style.left = (initialLeft + (clientX - startX)) + 'px';
     authBox.style.top = (initialTop + (clientY - startY)) + 'px';
   };
+
   const dragEnd = () => { isDragging = false; };
 
   authBox.addEventListener('mousedown', dragStart);
@@ -112,6 +122,7 @@
   const telegramBtn = document.getElementById("vanz-telegram-btn");
   const statusEl = document.getElementById("vanz-status");
 
+  // Xử lý bật/tắt nhạc nền từ xa
   let musicLoading = false;
   musicBtn.addEventListener("click", async () => {
     if (musicLoading) return;
@@ -143,6 +154,7 @@
 
   telegramBtn.addEventListener("click", () => window.open(telegramLink, "_blank"));
 
+  // Logic đếm ngược và chuyển hướng nâng cao
   function runRedirect(countdownSeconds) {
     document.removeEventListener('mousemove', dragMove);
     document.removeEventListener('touchmove', dragMove);
@@ -164,7 +176,7 @@
         const updateRes = await fetch("https://rm.rama-modz.workers.dev/");
         const updateText = await updateRes.text();
         if (updateText.includes("GitHub Updated")) hasUpdate = true;
-      } catch {}
+      } catch (err) {}
 
       const checkText = document.getElementById("vanz-check-text");
       checkText.innerHTML = hasUpdate ? "<span style='color:#00ffcc;'>Đã cập nhật link thành công! ✓</span>" : "<span style='color:#ff4444;'>Không có cập nhật mới!</span>";
@@ -210,11 +222,12 @@
               window.location.replace(redirectUrl);
             }
           }, 1000);
-        } catch { alert("LỖI CHUYỂN HƯỚNG!"); }
+        } catch (err) { alert("LỖI CHUYỂN HƯỚNG!"); }
       }, 1000);
     }, 1200);
   }
 
+  // Xác thực Key và đổi sang màn hình chọn chế độ
   loginBtn.addEventListener("click", () => {
     const inputKey = keyInput.value.trim();
     if (!inputKey) {
